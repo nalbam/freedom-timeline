@@ -33,10 +33,9 @@ Freedom Timeline은 경제적 자유(FIRE) 달성 시점을 가정·시뮬레이
 
 - 은퇴 전: 소득에 `incomeGrowthRate`. 은퇴 후: 소득 0, `pensionStartAge` 이후 연금(`pensionInflationLinked`면 인플레 연동, 아니면 명목 고정). 은퇴 직후 생활비는 `retirementExpenseRatio`로 1회 조정.
 - 생활비는 `inflationRate`로 증가. **자녀 교육비**(`eduCostAt`)는 family 구성원 나이가 `eduStartAge~eduEndAge`인 인원수 × `eduCostPerYear`로 매년 가산되며 생활비와 분리된다(FI 목표 자산엔 미포함). **일회성 이벤트**(`sumEventsAt`, `state.events`)는 해당 나이에 순자산을 가감한다. 교육비·이벤트 입력은 오늘 가치로 보고 명목 환산한다.
-- 매년 `netWorth = netWorth*(1+수익률) + 소득 − 총지출`. FI 목표 자산 = `생활비/withdrawalRate`, 순자산이 처음 넘는 나이가 `fiAge`. 순자산이 처음 음수가 되는 나이가 `depletionAge`(자산 고갈).
-- `overrides`로 일부 파라미터만 바꿔 재계산 — 시나리오 비교(`renderScenarioCards`)가 이용한다.
+- 매년 양(+)의 투자수익에 `investmentTaxRate`, 연금 수령액에 `pensionTaxRate`로 과세한다(근로소득 `annualIncome`은 실수령=세후 가정). `netWorth = netWorth + 세후수익 + 소득 − 총지출`. FI 목표 자산 = `생활비/withdrawalRate`, 순자산이 처음 넘는 나이가 `fiAge`. 순자산이 처음 음수가 되는 나이가 `depletionAge`(자산 고갈).
 - **표시 모드** (`displayMode`, `freedom-timeline-mode` 키): 명목 계산을 끝낸 뒤 `"real"`(오늘 가치, 기본)이면 결과 rows를 `(1 + inflationRate)^경과연수`로 나눠 현재 화폐가치로 환산한다. `"nominal"`(미래 가치)은 환산하지 않는다. 디플레이트는 표시값에만 적용되며 `fiAge`·`depletionAge`는 명목 비교로 구해 모드와 무관하다. 결과 패널의 `.mode-toggle` 버튼으로 전환한다.
-- **몬테카를로**(`runMonteCarlo`): 매년 수익률을 `N(returnRate, returnVolatility)`에서 샘플(`randNormal`, Box-Muller)해 `MC_ITERATIONS`회 `simulate` 실행 → 성공확률(고갈 없이 기대수명 도달 비율) + 최종 순자산 P10/P50/P90.
+- **몬테카를로**(`runMonteCarlo`): 매년 수익률을 `N(returnRate, returnVolatility)`에서 샘플(`randNormal`, Box-Muller)해 `MC_ITERATIONS`회 `simulate` 실행 → 성공확률(고갈 없이 기대수명 도달 비율) + 최종 순자산 P10/P50/P90 + FI 달성 나이 P10/P50/P90·달성률. 불확실성 표현을 전담한다(별도 시나리오 비교 패널은 없음).
 
 ### 선언적 입력 필드: `FIELD_CONFIGS`
 

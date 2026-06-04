@@ -28,13 +28,15 @@ const DEFAULT_STATE = {
     eduStartAge: 7,
     eduEndAge: 22,
     returnVolatility: 15,
+    investmentTaxRate: 15.4,
+    pensionTaxRate: 5,
   },
   events: [],
 };
 
 const FIELD_CONFIGS = [
   { key: "currentNetWorth", label: "현재 순자산(원)", min: 0, max: 3000000000, step: 1000000, unit: "money" },
-  { key: "annualIncome", label: "연간 소득(원)", min: 0, max: 1000000000, step: 1000000, unit: "money" },
+  { key: "annualIncome", label: "연간 소득(원, 실수령)", min: 0, max: 1000000000, step: 1000000, unit: "money" },
   { key: "annualExpense", label: "연간 지출(원)", min: 0, max: 1000000000, step: 1000000, unit: "money" },
   { key: "returnRate", label: "투자 기대 수익률(%)", min: 0, max: 20, step: 0.1, unit: "percent" },
   { key: "inflationRate", label: "인플레이션(%)", min: 0, max: 20, step: 0.1, unit: "percent" },
@@ -49,6 +51,8 @@ const FIELD_CONFIGS = [
   { key: "eduStartAge", label: "교육비 시작 나이(세)", min: 0, max: 30, step: 1, unit: "age" },
   { key: "eduEndAge", label: "교육비 종료 나이(세)", min: 0, max: 30, step: 1, unit: "age" },
   { key: "returnVolatility", label: "수익률 변동성(%)", min: 0, max: 40, step: 1, unit: "percent" },
+  { key: "investmentTaxRate", label: "투자수익 세율(%)", min: 0, max: 30, step: 0.1, unit: "percent" },
+  { key: "pensionTaxRate", label: "연금소득 세율(%)", min: 0, max: 30, step: 0.1, unit: "percent" },
 ];
 
 const state = loadState();
@@ -165,7 +169,7 @@ function renderEvents() {
           <input type="number" data-event="age" data-index="${index}" value="${ev.age}" />
         </label>
         <label style="flex:1">
-          금액(원, 유출은 음수)
+          금액(원, 음수)
           <input type="number" data-event="amount" data-index="${index}" value="${ev.amount}" />
         </label>
         <label style="flex:1">
@@ -233,6 +237,8 @@ function simulate(finance, rateForYear) {
   const incomeGrowthRate = finance.incomeGrowthRate / 100;
   const withdrawalRate = Math.max(finance.withdrawalRate / 100, 0.001);
   const retirementExpenseRatio = finance.retirementExpenseRatio / 100;
+  const investmentTaxRate = finance.investmentTaxRate / 100;
+  const pensionTaxRate = finance.pensionTaxRate / 100;
 
   let netWorth = finance.currentNetWorth;
   let income = finance.annualIncome;
@@ -246,9 +252,10 @@ function simulate(finance, rateForYear) {
       if (age <= retirementAge) {
         income *= 1 + incomeGrowthRate;
       } else if (age >= pensionStartAge) {
-        income = finance.pensionInflationLinked
+        const pension = finance.pensionInflationLinked
           ? finance.annualPensionAmount * Math.pow(1 + inflationRate, age - currentAge)
           : finance.annualPensionAmount;
+        income = pension * (1 - pensionTaxRate);
       } else {
         income = 0;
       }
@@ -259,7 +266,9 @@ function simulate(finance, rateForYear) {
     const totalExpense = expense + eduCost;
     if (age > currentAge) {
       const returnRate = rateForYear(age - currentAge);
-      netWorth = netWorth * (1 + returnRate) + income - totalExpense;
+      const gain = netWorth * returnRate;
+      const tax = Math.max(0, gain) * investmentTaxRate;
+      netWorth = netWorth + gain - tax + income - totalExpense;
       netWorth += sumEventsAt(state.events, age, currentAge, inflationRate);
     }
     const goalAsset = expense / withdrawalRate;
@@ -271,8 +280,8 @@ function simulate(finance, rateForYear) {
   return { currentAge, lifeExpectancy, retirementAge, fiAge, depletionAge, inflationRate, withdrawalRate, rows };
 }
 
-function calculateProjection(overrides = {}) {
-  const finance = { ...state.finance, ...overrides };
+function calculateProjection() {
+  const finance = state.finance;
   const returnRate = finance.returnRate / 100;
   const sim = simulate(finance, () => returnRate);
   const { currentAge, lifeExpectancy, retirementAge, fiAge, depletionAge, inflationRate, withdrawalRate, rows } = sim;
@@ -330,21 +339,28 @@ function runMonteCarlo() {
   const lifeExpectancy = Math.max(finance.lifeExpectancy, currentAge + 1);
 
   const finals = [];
+  const fiAges = [];
   let successCount = 0;
   for (let i = 0; i < MC_ITERATIONS; i += 1) {
     const sim = simulate(finance, () => meanReturn + vol * randNormal());
     if (sim.depletionAge === null) successCount += 1;
+    if (sim.fiAge !== null) fiAges.push(sim.fiAge);
     finals.push(sim.rows[sim.rows.length - 1].netWorth);
   }
   finals.sort((a, b) => a - b);
-  const percentile = (p) => finals[Math.min(finals.length - 1, Math.floor(p * finals.length))];
+  fiAges.sort((a, b) => a - b);
+  const percentile = (arr, p) => arr[Math.min(arr.length - 1, Math.floor(p * arr.length))];
   const deflate = displayMode === "real" ? Math.pow(1 + inflationRate, lifeExpectancy - currentAge) : 1;
 
   return {
     successRate: successCount / MC_ITERATIONS,
-    p10: percentile(0.1) / deflate,
-    p50: percentile(0.5) / deflate,
-    p90: percentile(0.9) / deflate,
+    p10: percentile(finals, 0.1) / deflate,
+    p50: percentile(finals, 0.5) / deflate,
+    p90: percentile(finals, 0.9) / deflate,
+    fiReachRate: fiAges.length / MC_ITERATIONS,
+    fiP10: fiAges.length ? percentile(fiAges, 0.1) : null,
+    fiP50: fiAges.length ? percentile(fiAges, 0.5) : null,
+    fiP90: fiAges.length ? percentile(fiAges, 0.9) : null,
   };
 }
 
@@ -394,46 +410,20 @@ function renderCards(base) {
     .join("");
 }
 
-function renderScenarioCards() {
-  const container = document.getElementById("scenario-cards");
-  const base = calculateProjection();
-  const conservative = calculateProjection({
-    returnRate: Math.max(state.finance.returnRate - 2, 0),
-    inflationRate: state.finance.inflationRate + 1,
-  });
-  const optimistic = calculateProjection({
-    returnRate: state.finance.returnRate + 2,
-    inflationRate: Math.max(state.finance.inflationRate - 1, 0),
-  });
-
-  const scenarios = [
-    { name: "보수적", data: conservative },
-    { name: "기본", data: base },
-    { name: "낙관적", data: optimistic },
-  ];
-
-  container.innerHTML = scenarios
-    .map(
-      (scenario) => `
-      <article class="card">
-        <div class="title">${scenario.name}</div>
-        <div class="value">${formatMoney(scenario.data.finalNetWorth)}</div>
-        <div>FI 나이: ${scenario.data.fiAge ? `${scenario.data.fiAge}세` : "미달성"}</div>
-      </article>
-    `
-    )
-    .join("");
-}
-
 function renderMonteCarlo() {
   const result = runMonteCarlo();
   const pct = Math.round(result.successRate * 100);
   const hero = document.getElementById("mc-hero");
   hero.className = pct >= 80 ? "hero" : "hero unreached";
+  const fiNote =
+    result.fiReachRate > 0
+      ? `FI 달성 나이 ${result.fiP10}~${result.fiP90}세 (중앙값 ${result.fiP50}세, 달성률 ${Math.round(result.fiReachRate * 100)}%)`
+      : "대부분의 시나리오에서 FI 미달성";
   hero.innerHTML = `
     <div class="label">기대수명까지 자산 유지 성공 확률 (${MC_ITERATIONS}회 시뮬)</div>
     <div class="big">${pct}%</div>
     <div class="sub">수익률 변동성 ${state.finance.returnVolatility}% 가정</div>
+    <div class="hero-note">${fiNote}</div>
   `;
 
   const cards = [
@@ -574,7 +564,6 @@ function rerenderResults() {
   saveState();
   const base = calculateProjection();
   renderCards(base);
-  renderScenarioCards();
   renderMonteCarlo();
   renderCharts(base);
 }
