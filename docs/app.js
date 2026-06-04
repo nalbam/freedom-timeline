@@ -1,6 +1,7 @@
 const STORAGE_KEY = "freedom-timeline-state";
 const THEME_KEY = "freedom-timeline-theme";
 const MODE_KEY = "freedom-timeline-mode";
+const MC_ITERATIONS = 500;
 
 const DEFAULT_STATE = {
   family: [
@@ -21,7 +22,14 @@ const DEFAULT_STATE = {
     withdrawalRate: 4,
     pensionStartAge: 65,
     annualPensionAmount: 20000000,
+    retirementExpenseRatio: 100,
+    pensionInflationLinked: true,
+    eduCostPerYear: 15000000,
+    eduStartAge: 7,
+    eduEndAge: 22,
+    returnVolatility: 15,
   },
+  events: [],
 };
 
 const FIELD_CONFIGS = [
@@ -36,6 +44,11 @@ const FIELD_CONFIGS = [
   { key: "withdrawalRate", label: "경제적 자유 인출률(%)", min: 1, max: 10, step: 0.1, unit: "percent" },
   { key: "pensionStartAge", label: "연금 수령 시작 나이(세)", min: 40, max: 100, step: 1, unit: "age" },
   { key: "annualPensionAmount", label: "연간 연금 수령액(원)", min: 0, max: 300000000, step: 1000000, unit: "money" },
+  { key: "retirementExpenseRatio", label: "은퇴 후 지출 비율(%)", min: 40, max: 120, step: 5, unit: "percent" },
+  { key: "eduCostPerYear", label: "자녀 1인당 연 교육비(원)", min: 0, max: 100000000, step: 1000000, unit: "money" },
+  { key: "eduStartAge", label: "교육비 시작 나이(세)", min: 0, max: 30, step: 1, unit: "age" },
+  { key: "eduEndAge", label: "교육비 종료 나이(세)", min: 0, max: 30, step: 1, unit: "age" },
+  { key: "returnVolatility", label: "수익률 변동성(%)", min: 0, max: 40, step: 1, unit: "percent" },
 ];
 
 const state = loadState();
@@ -51,6 +64,7 @@ function loadState() {
     return {
       family: Array.isArray(parsed.family) && parsed.family.length > 0 ? parsed.family : structuredClone(DEFAULT_STATE.family),
       finance: { ...structuredClone(DEFAULT_STATE.finance), ...(parsed.finance || {}) },
+      events: Array.isArray(parsed.events) ? parsed.events : [],
     };
   } catch {
     return structuredClone(DEFAULT_STATE);
@@ -81,6 +95,23 @@ function formatHint(field, value) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+// 해당 나이에 발생하는 일회성 이벤트 합. 입력 금액은 오늘 가치로 보고 명목으로 환산.
+function sumEventsAt(events, age, currentAge, inflationRate) {
+  return events
+    .filter((ev) => Number(ev.age) === age)
+    .reduce((sum, ev) => sum + Number(ev.amount || 0) * Math.pow(1 + inflationRate, age - currentAge), 0);
+}
+
+// 해당 시뮬 연도의 자녀 교육비 합. 교육 구간(eduStartAge~eduEndAge) 나이의 구성원 수 × 1인당 교육비(명목 환산).
+function eduCostAt(family, age, currentAge, finance, inflationRate) {
+  const t = age - currentAge;
+  const count = family.filter((m) => {
+    const memberAge = getAge(m.birthDate) + t;
+    return memberAge >= finance.eduStartAge && memberAge <= finance.eduEndAge;
+  }).length;
+  return count * finance.eduCostPerYear * Math.pow(1 + inflationRate, t);
 }
 
 function getAge(birthDate) {
@@ -120,6 +151,41 @@ function renderFamily() {
   });
 }
 
+function renderEvents() {
+  const list = document.getElementById("event-list");
+  list.innerHTML = "";
+  state.events.forEach((ev, index) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "family-item";
+    const flow = Number(ev.amount) < 0 ? "유출" : "유입";
+    wrapper.innerHTML = `
+      <div class="row">
+        <label style="flex:0 0 80px">
+          나이
+          <input type="number" data-event="age" data-index="${index}" value="${ev.age}" />
+        </label>
+        <label style="flex:1">
+          금액(원, 유출은 음수)
+          <input type="number" data-event="amount" data-index="${index}" value="${ev.amount}" />
+        </label>
+        <label style="flex:1">
+          설명
+          <input type="text" data-event="label" data-index="${index}" value="${ev.label}" />
+        </label>
+        <button type="button" data-action="delete-event" data-index="${index}">삭제</button>
+      </div>
+      <div class="member-age">${flow} ≈ ${formatCompactMoney(Math.abs(Number(ev.amount) || 0))}</div>
+    `;
+    list.appendChild(wrapper);
+  });
+}
+
+function syncToggles() {
+  document.querySelectorAll("[data-toggle]").forEach((cb) => {
+    cb.checked = Boolean(state.finance[cb.dataset.toggle]);
+  });
+}
+
 function renderFinanceFields() {
   const container = document.getElementById("finance-fields");
   container.innerHTML = "";
@@ -155,38 +221,61 @@ function renderFinanceFields() {
   });
 }
 
-function calculateProjection(overrides = {}) {
-  const finance = { ...state.finance, ...overrides };
+// 연 단위 명목 시뮬레이션 코어. `rateForYear(t)`가 t년차 수익률을 반환한다(결정론=고정, 몬테카를로=샘플).
+// calculateProjection(결정론)과 runMonteCarlo가 공유한다.
+function simulate(finance, rateForYear) {
   const owner = state.family[0] || DEFAULT_STATE.family[0];
   const currentAge = getAge(owner.birthDate);
   const lifeExpectancy = Math.max(finance.lifeExpectancy, currentAge + 1);
   const retirementAge = clamp(finance.retirementAge, currentAge, lifeExpectancy);
   const pensionStartAge = clamp(finance.pensionStartAge, currentAge, lifeExpectancy);
-  const returnRate = finance.returnRate / 100;
   const inflationRate = finance.inflationRate / 100;
   const incomeGrowthRate = finance.incomeGrowthRate / 100;
   const withdrawalRate = Math.max(finance.withdrawalRate / 100, 0.001);
+  const retirementExpenseRatio = finance.retirementExpenseRatio / 100;
 
   let netWorth = finance.currentNetWorth;
   let income = finance.annualIncome;
   let expense = finance.annualExpense;
   let fiAge = null;
+  let depletionAge = null;
 
   const rows = [];
   for (let age = currentAge; age <= lifeExpectancy; age += 1) {
     if (age > currentAge) {
       if (age <= retirementAge) {
         income *= 1 + incomeGrowthRate;
+      } else if (age >= pensionStartAge) {
+        income = finance.pensionInflationLinked
+          ? finance.annualPensionAmount * Math.pow(1 + inflationRate, age - currentAge)
+          : finance.annualPensionAmount;
       } else {
-        income = age >= pensionStartAge ? finance.annualPensionAmount : 0;
+        income = 0;
       }
       expense *= 1 + inflationRate;
-      netWorth = netWorth * (1 + returnRate) + income - expense;
+      if (age === retirementAge + 1) expense *= retirementExpenseRatio;
+    }
+    const eduCost = eduCostAt(state.family, age, currentAge, finance, inflationRate);
+    const totalExpense = expense + eduCost;
+    if (age > currentAge) {
+      const returnRate = rateForYear(age - currentAge);
+      netWorth = netWorth * (1 + returnRate) + income - totalExpense;
+      netWorth += sumEventsAt(state.events, age, currentAge, inflationRate);
     }
     const goalAsset = expense / withdrawalRate;
     if (fiAge === null && netWorth >= goalAsset) fiAge = age;
-    rows.push({ age, netWorth, income, expense, goalAsset });
+    if (depletionAge === null && netWorth < 0) depletionAge = age;
+    rows.push({ age, netWorth, income, expense: totalExpense, goalAsset });
   }
+
+  return { currentAge, lifeExpectancy, retirementAge, fiAge, depletionAge, inflationRate, withdrawalRate, rows };
+}
+
+function calculateProjection(overrides = {}) {
+  const finance = { ...state.finance, ...overrides };
+  const returnRate = finance.returnRate / 100;
+  const sim = simulate(finance, () => returnRate);
+  const { currentAge, lifeExpectancy, retirementAge, fiAge, depletionAge, inflationRate, withdrawalRate, rows } = sim;
 
   // 실질(오늘 가치) 모드: 각 연도 값을 (1 + 인플레)^경과연수로 나눠 현재 화폐가치로 환산.
   // fiAge 판정은 명목 비교로 끝났고, 디플레이트는 표시값에만 적용한다(같은 계수라 대소 불변).
@@ -211,6 +300,8 @@ function calculateProjection(overrides = {}) {
     currentAge,
     retirementAge,
     fiAge,
+    depletionAge,
+    lifeExpectancy,
     rows: displayRows,
     retirementNetWorth: retirementRow.netWorth,
     finalNetWorth: finalRow.netWorth,
@@ -219,8 +310,51 @@ function calculateProjection(overrides = {}) {
   };
 }
 
+// 표준정규분포 샘플 (Box-Muller).
+function randNormal() {
+  let u = 0;
+  let v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// 매년 수익률을 N(평균, 변동성)에서 샘플해 MC_ITERATIONS회 시뮬. 성공확률 + 최종 순자산 분위수 반환.
+function runMonteCarlo() {
+  const finance = state.finance;
+  const meanReturn = finance.returnRate / 100;
+  const vol = finance.returnVolatility / 100;
+  const inflationRate = finance.inflationRate / 100;
+  const owner = state.family[0] || DEFAULT_STATE.family[0];
+  const currentAge = getAge(owner.birthDate);
+  const lifeExpectancy = Math.max(finance.lifeExpectancy, currentAge + 1);
+
+  const finals = [];
+  let successCount = 0;
+  for (let i = 0; i < MC_ITERATIONS; i += 1) {
+    const sim = simulate(finance, () => meanReturn + vol * randNormal());
+    if (sim.depletionAge === null) successCount += 1;
+    finals.push(sim.rows[sim.rows.length - 1].netWorth);
+  }
+  finals.sort((a, b) => a - b);
+  const percentile = (p) => finals[Math.min(finals.length - 1, Math.floor(p * finals.length))];
+  const deflate = displayMode === "real" ? Math.pow(1 + inflationRate, lifeExpectancy - currentAge) : 1;
+
+  return {
+    successRate: successCount / MC_ITERATIONS,
+    p10: percentile(0.1) / deflate,
+    p50: percentile(0.5) / deflate,
+    p90: percentile(0.9) / deflate,
+  };
+}
+
 function renderCards(base) {
   const hero = document.getElementById("result-hero");
+  const depletionNote =
+    base.depletionAge !== null
+      ? `<div class="hero-note warn">⚠ ${base.depletionAge}세에 자산 고갈</div>`
+      : `<div class="hero-note">기대수명(${base.lifeExpectancy}세)까지 자산 유지</div>`;
+
   if (base.fiAge !== null) {
     const yearsToFi = Math.max(base.fiAge - base.currentAge, 0);
     hero.className = "hero";
@@ -228,6 +362,7 @@ function renderCards(base) {
       <div class="label">예상 경제적 자유 달성 나이</div>
       <div class="big">${base.fiAge}세</div>
       <div class="sub">${yearsToFi === 0 ? "이미 달성" : `달성까지 ${yearsToFi}년`}</div>
+      ${depletionNote}
     `;
   } else {
     hero.className = "hero unreached";
@@ -235,6 +370,7 @@ function renderCards(base) {
       <div class="label">예상 경제적 자유 달성 나이</div>
       <div class="big">미달성</div>
       <div class="sub">현재 입력값으로는 기대 수명 내에 목표 자산에 도달하지 못합니다.</div>
+      ${depletionNote}
     `;
   }
 
@@ -289,6 +425,35 @@ function renderScenarioCards() {
     .join("");
 }
 
+function renderMonteCarlo() {
+  const result = runMonteCarlo();
+  const pct = Math.round(result.successRate * 100);
+  const hero = document.getElementById("mc-hero");
+  hero.className = pct >= 80 ? "hero" : "hero unreached";
+  hero.innerHTML = `
+    <div class="label">기대수명까지 자산 유지 성공 확률 (${MC_ITERATIONS}회 시뮬)</div>
+    <div class="big">${pct}%</div>
+    <div class="sub">수익률 변동성 ${state.finance.returnVolatility}% 가정</div>
+  `;
+
+  const cards = [
+    { title: "비관적 (하위 10%, P10)", amount: result.p10 },
+    { title: "중앙값 (P50)", amount: result.p50 },
+    { title: "낙관적 (상위 10%, P90)", amount: result.p90 },
+  ];
+  document.getElementById("mc-cards").innerHTML = cards
+    .map(
+      (card) => `
+        <article class="card">
+          <div class="title">${card.title}</div>
+          <div class="value">${formatMoney(card.amount)}</div>
+          <div class="card-approx">≈ ${formatCompactMoney(card.amount)}</div>
+        </article>
+      `
+    )
+    .join("");
+}
+
 function renderCharts(base) {
   if (typeof Chart === "undefined") {
     const networthCanvas = document.getElementById("networth-chart");
@@ -326,10 +491,16 @@ function renderCharts(base) {
   const expenseData = base.rows.map((row) => row.expense);
 
   const markerRadius = base.rows.map((row) =>
-    row.age === base.fiAge || row.age === base.retirementAge ? 6 : 0
+    row.age === base.fiAge || row.age === base.retirementAge || row.age === base.depletionAge ? 6 : 0
   );
   const markerColor = base.rows.map((row) =>
-    row.age === base.fiAge ? success : row.age === base.retirementAge ? warning : primary
+    row.age === base.depletionAge
+      ? danger
+      : row.age === base.fiAge
+        ? success
+        : row.age === base.retirementAge
+          ? warning
+          : primary
   );
 
   const moneyAxis = {
@@ -404,12 +575,15 @@ function rerenderResults() {
   const base = calculateProjection();
   renderCards(base);
   renderScenarioCards();
+  renderMonteCarlo();
   renderCharts(base);
 }
 
 function recalculateAndRender() {
   renderFamily();
   renderFinanceFields();
+  renderEvents();
+  syncToggles();
   rerenderResults();
 }
 
@@ -447,6 +621,13 @@ function attachEvents() {
   document.getElementById("reset-btn").addEventListener("click", () => {
     state.family = structuredClone(DEFAULT_STATE.family);
     state.finance = structuredClone(DEFAULT_STATE.finance);
+    state.events = structuredClone(DEFAULT_STATE.events);
+    recalculateAndRender();
+  });
+
+  document.getElementById("add-event-btn").addEventListener("click", () => {
+    const owner = state.family[0] || DEFAULT_STATE.family[0];
+    state.events.push({ age: getAge(owner.birthDate) + 5, amount: -10000000, label: "이벤트" });
     recalculateAndRender();
   });
 
@@ -459,6 +640,19 @@ function attachEvents() {
     if (!Number.isNaN(memberIndex) && memberType && state.family[memberIndex]) {
       state.family[memberIndex][memberType] = target.value;
       recalculateAndRender();
+      return;
+    }
+
+    if (target.dataset.toggle) {
+      state.finance[target.dataset.toggle] = target.checked;
+      rerenderResults();
+      return;
+    }
+
+    const eventType = target.dataset.event;
+    if (eventType && !Number.isNaN(memberIndex) && state.events[memberIndex]) {
+      state.events[memberIndex][eventType] = eventType === "label" ? target.value : Number(target.value) || 0;
+      rerenderResults();
       return;
     }
 
@@ -490,6 +684,15 @@ function attachEvents() {
       localStorage.setItem(MODE_KEY, displayMode);
       syncModeButtons();
       rerenderResults();
+      return;
+    }
+
+    if (target.dataset.action === "delete-event") {
+      const eventIndex = Number(target.dataset.index);
+      if (!Number.isNaN(eventIndex)) {
+        state.events.splice(eventIndex, 1);
+        recalculateAndRender();
+      }
       return;
     }
 

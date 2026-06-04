@@ -40,6 +40,18 @@
               <button id="reset-btn" type="button" class="danger">초기화</button>
             </div>
             <div id="finance-fields" class="field-grid"></div>
+            <label class="check-row">
+              <input type="checkbox" data-toggle="pensionInflationLinked" />
+              연금 물가연동 (수령액이 인플레이션만큼 증가)
+            </label>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title-row">
+              <h2>일회성 이벤트</h2>
+              <button id="add-event-btn" type="button">이벤트 추가</button>
+            </div>
+            <div id="event-list"></div>
           </section>
         </div>
 
@@ -69,6 +81,12 @@
           <section class="panel">
             <h2>소득 / 지출 비교 그래프</h2>
             <canvas id="cashflow-chart"></canvas>
+          </section>
+
+          <section class="panel">
+            <h2>몬테카를로 시뮬레이션 (수익률 변동성 반영)</h2>
+            <div id="mc-hero"></div>
+            <div id="mc-cards" class="cards"></div>
           </section>
         </div>
       </div>

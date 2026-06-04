@@ -226,6 +226,19 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
 }
 
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.check-row input {
+  width: auto;
+}
+
 .member-age {
   margin-top: 6px;
   font-size: 12px;
@@ -263,6 +276,18 @@ input[type="range"] {
 .hero .sub {
   font-size: 15px;
   opacity: 0.9;
+}
+
+.hero-note {
+  flex: 1 1 100%;
+  margin-top: 4px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.hero-note.warn {
+  font-weight: 600;
+  opacity: 1;
 }
 
 .cards {
