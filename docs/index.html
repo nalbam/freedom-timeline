@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Freedom Timeline</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Freedom Timeline</h1>
+        <p>가족/재무 정보를 입력하면 경제적 자유 시점을 즉시 계산합니다.</p>
+      </header>
+
+      <section class="panel">
+        <div class="panel-title-row">
+          <h2>가족 구성원</h2>
+          <button id="add-member-btn" type="button">구성원 추가</button>
+        </div>
+        <div id="family-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title-row">
+          <h2>재무 입력</h2>
+          <button id="reset-btn" type="button" class="danger">초기화</button>
+        </div>
+        <div id="finance-fields" class="field-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>결과</h2>
+        <div id="result-cards" class="cards"></div>
+      </section>
+
+      <section class="panel">
+        <h2>보수적 / 기본 / 낙관적 시나리오 비교</h2>
+        <div id="scenario-cards" class="cards"></div>
+      </section>
+
+      <section class="panel">
+        <h2>나이별 순자산 그래프</h2>
+        <canvas id="networth-chart"></canvas>
+      </section>
+
+      <section class="panel">
+        <h2>소득 / 지출 비교 그래프</h2>
+        <canvas id="cashflow-chart"></canvas>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
