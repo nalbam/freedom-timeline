@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Freedom Timeline</title>
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <script>
       (function () {
         const saved = localStorage.getItem("freedom-timeline-theme");
@@ -17,9 +21,12 @@
   <body>
     <main class="container">
       <header>
-        <div>
-          <h1>Freedom Timeline</h1>
-          <p>가족/재무 정보를 입력하면 경제적 자유 시점을 즉시 계산합니다.</p>
+        <div class="brand">
+          <img class="brand-logo" src="./logo.png" alt="Freedom Timeline 로고" width="44" height="44" />
+          <div>
+            <h1>Freedom Timeline</h1>
+            <p>가족/재무 정보를 입력하면 경제적 자유 시점을 즉시 계산합니다.</p>
+          </div>
         </div>
         <button id="theme-toggle" type="button" aria-label="테마 전환">🌙</button>
       </header>
