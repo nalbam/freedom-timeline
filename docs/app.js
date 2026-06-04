@@ -110,9 +110,9 @@ function renderFamily() {
           생년월일
           <input type="date" data-type="birthDate" data-index="${index}" value="${member.birthDate}" />
         </label>
-        <div>만 나이: <strong>${age}세</strong></div>
         <button type="button" data-action="delete" data-index="${index}">삭제</button>
       </div>
+      <div class="member-age">만 나이 ${age}세</div>
     `;
     list.appendChild(wrapper);
   });

@@ -24,42 +24,48 @@
         <button id="theme-toggle" type="button" aria-label="테마 전환">🌙</button>
       </header>
 
-      <section class="panel">
-        <div class="panel-title-row">
-          <h2>가족 구성원</h2>
-          <button id="add-member-btn" type="button">구성원 추가</button>
+      <div class="layout">
+        <div class="col col-input">
+          <section class="panel">
+            <div class="panel-title-row">
+              <h2>가족 구성원</h2>
+              <button id="add-member-btn" type="button">구성원 추가</button>
+            </div>
+            <div id="family-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-title-row">
+              <h2>재무 입력</h2>
+              <button id="reset-btn" type="button" class="danger">초기화</button>
+            </div>
+            <div id="finance-fields" class="field-grid"></div>
+          </section>
         </div>
-        <div id="family-list"></div>
-      </section>
 
-      <section class="panel">
-        <div class="panel-title-row">
-          <h2>재무 입력</h2>
-          <button id="reset-btn" type="button" class="danger">초기화</button>
+        <div class="col col-output">
+          <section class="panel">
+            <h2>결과</h2>
+            <div id="result-hero"></div>
+            <div id="result-cards" class="cards"></div>
+          </section>
+
+          <section class="panel">
+            <h2>보수적 / 기본 / 낙관적 시나리오 비교</h2>
+            <div id="scenario-cards" class="cards"></div>
+          </section>
+
+          <section class="panel">
+            <h2>나이별 순자산 그래프</h2>
+            <canvas id="networth-chart"></canvas>
+          </section>
+
+          <section class="panel">
+            <h2>소득 / 지출 비교 그래프</h2>
+            <canvas id="cashflow-chart"></canvas>
+          </section>
         </div>
-        <div id="finance-fields" class="field-grid"></div>
-      </section>
-
-      <section class="panel">
-        <h2>결과</h2>
-        <div id="result-hero"></div>
-        <div id="result-cards" class="cards"></div>
-      </section>
-
-      <section class="panel">
-        <h2>보수적 / 기본 / 낙관적 시나리오 비교</h2>
-        <div id="scenario-cards" class="cards"></div>
-      </section>
-
-      <section class="panel">
-        <h2>나이별 순자산 그래프</h2>
-        <canvas id="networth-chart"></canvas>
-      </section>
-
-      <section class="panel">
-        <h2>소득 / 지출 비교 그래프</h2>
-        <canvas id="cashflow-chart"></canvas>
-      </section>
+      </div>
     </main>
 
     <script src="./app.js"></script>
