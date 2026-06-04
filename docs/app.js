@@ -222,17 +222,18 @@ function renderCards(base) {
 
   const container = document.getElementById("result-cards");
   const cards = [
-    { title: "현재 기준 경제적 자유 목표 자산", value: formatMoney(base.currentFiTarget) },
-    { title: "현재 연간 잉여자금", value: formatMoney(base.annualSurplus) },
-    { title: "은퇴 시점 예상 순자산", value: formatMoney(base.retirementNetWorth) },
-    { title: "기대 수명 시점 예상 순자산", value: formatMoney(base.finalNetWorth) },
+    { title: "현재 기준 경제적 자유 목표 자산", amount: base.currentFiTarget },
+    { title: "현재 연간 잉여자금", amount: base.annualSurplus },
+    { title: "은퇴 시점 예상 순자산", amount: base.retirementNetWorth },
+    { title: "기대 수명 시점 예상 순자산", amount: base.finalNetWorth },
   ];
   container.innerHTML = cards
     .map(
       (card) => `
         <article class="card">
           <div class="title">${card.title}</div>
-          <div class="value">${card.value}</div>
+          <div class="value">${formatMoney(card.amount)}</div>
+          <div class="card-approx">≈ ${formatCompactMoney(card.amount)}</div>
         </article>
       `
     )
