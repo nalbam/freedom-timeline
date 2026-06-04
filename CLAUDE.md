@@ -21,11 +21,11 @@ Freedom Timeline은 경제적 자유(FIRE) 달성 시점을 가정·시뮬레이
 
 데이터 흐름은 단방향 재렌더링이다:
 
-1. **단일 `state` 객체** — `{ family, finance }`. `loadState()`가 `localStorage`의 `freedom-timeline-state` 키에서 복원하고, 없거나 깨졌으면 `DEFAULT_STATE`로 폴백한다.
+1. **단일 `state` 객체** — `{ family, finance, events }`. `loadState()`가 `localStorage`의 `freedom-timeline-state` 키에서 복원하고, 없거나 깨졌으면 `DEFAULT_STATE`로 폴백한다.
 2. **이벤트 → state 변경** — 모든 input/click은 `document.body`에 위임된 단일 핸들러가 `data-*` 속성(`data-key`, `data-index`, `data-type`, `data-action`)으로 식별해 처리한다. 개별 요소에 리스너를 붙이지 않는다.
 3. **재렌더 — 두 진입점**:
-   - `recalculateAndRender()` — 가족 추가/삭제·이름·생일 변경, 초기 로드, 리셋 시. 가족·재무필드를 포함한 전체 UI를 다시 그린다.
-   - `rerenderResults()` — 재무 슬라이더/숫자 입력 변경 시. 저장 + 결과카드·시나리오·차트만 갱신한다. 입력 필드를 재생성하지 않아 슬라이더 드래그가 끊기지 않으며, 짝꿍 input과 `.field-hint`는 핸들러가 직접 갱신한다.
+   - `recalculateAndRender()` — 가족·이벤트 추가/삭제·이름·생일 변경, 초기 로드, 리셋 시. 가족·재무·이벤트 필드를 포함한 전체 UI를 다시 그린다.
+   - `rerenderResults()` — 재무 슬라이더/숫자/체크박스 입력 변경 시. 저장 + 결과카드·시나리오·몬테카를로·차트만 갱신한다. 입력 필드를 재생성하지 않아 슬라이더 드래그가 끊기지 않으며, 짝꿍 input과 `.field-hint`는 핸들러가 직접 갱신한다.
 
 ### 핵심 계산: `simulate` / `calculateProjection`
 
