@@ -141,6 +141,26 @@ button.danger {
   padding: 8px 12px;
 }
 
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.mode-toggle button {
+  background: var(--surface-2);
+  color: var(--muted);
+  border-radius: 0;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.mode-toggle button.active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
 .family-item {
   border: 1px solid var(--border);
   border-radius: 10px;

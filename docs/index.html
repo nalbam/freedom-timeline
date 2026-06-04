@@ -45,7 +45,13 @@
 
         <div class="col col-output">
           <section class="panel">
-            <h2>결과</h2>
+            <div class="panel-title-row">
+              <h2>결과</h2>
+              <div class="mode-toggle">
+                <button type="button" data-mode="real">오늘 가치</button>
+                <button type="button" data-mode="nominal">미래 가치</button>
+              </div>
+            </div>
             <div id="result-hero"></div>
             <div id="result-cards" class="cards"></div>
           </section>

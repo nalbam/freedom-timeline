@@ -1,5 +1,6 @@
 const STORAGE_KEY = "freedom-timeline-state";
 const THEME_KEY = "freedom-timeline-theme";
+const MODE_KEY = "freedom-timeline-mode";
 
 const DEFAULT_STATE = {
   family: [
@@ -38,6 +39,7 @@ const FIELD_CONFIGS = [
 ];
 
 const state = loadState();
+let displayMode = localStorage.getItem(MODE_KEY) === "nominal" ? "nominal" : "real";
 let netWorthChart;
 let cashFlowChart;
 
@@ -186,14 +188,30 @@ function calculateProjection(overrides = {}) {
     rows.push({ age, netWorth, income, expense, goalAsset });
   }
 
-  const retirementRow = rows.find((row) => row.age === retirementAge) || rows[rows.length - 1];
-  const finalRow = rows[rows.length - 1];
+  // 실질(오늘 가치) 모드: 각 연도 값을 (1 + 인플레)^경과연수로 나눠 현재 화폐가치로 환산.
+  // fiAge 판정은 명목 비교로 끝났고, 디플레이트는 표시값에만 적용한다(같은 계수라 대소 불변).
+  let displayRows = rows;
+  if (displayMode === "real") {
+    displayRows = rows.map((row) => {
+      const factor = Math.pow(1 + inflationRate, row.age - currentAge);
+      return {
+        age: row.age,
+        netWorth: row.netWorth / factor,
+        income: row.income / factor,
+        expense: row.expense / factor,
+        goalAsset: row.goalAsset / factor,
+      };
+    });
+  }
+
+  const retirementRow = displayRows.find((row) => row.age === retirementAge) || displayRows[displayRows.length - 1];
+  const finalRow = displayRows[displayRows.length - 1];
 
   return {
     currentAge,
     retirementAge,
     fiAge,
-    rows,
+    rows: displayRows,
     retirementNetWorth: retirementRow.netWorth,
     finalNetWorth: finalRow.netWorth,
     currentFiTarget: finance.annualExpense / withdrawalRate,
@@ -411,8 +429,15 @@ function initThemeToggle() {
   });
 }
 
+function syncModeButtons() {
+  document.querySelectorAll("[data-mode]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === displayMode);
+  });
+}
+
 function attachEvents() {
   initThemeToggle();
+  syncModeButtons();
 
   document.getElementById("add-member-btn").addEventListener("click", () => {
     state.family.push({ name: `구성원${state.family.length + 1}`, birthDate: "2000-01-01" });
@@ -459,6 +484,15 @@ function attachEvents() {
   document.body.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
+
+    if (target.dataset.mode) {
+      displayMode = target.dataset.mode === "nominal" ? "nominal" : "real";
+      localStorage.setItem(MODE_KEY, displayMode);
+      syncModeButtons();
+      rerenderResults();
+      return;
+    }
+
     if (target.dataset.action !== "delete") return;
     const index = Number(target.dataset.index);
     if (Number.isNaN(index)) return;

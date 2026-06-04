@@ -13,15 +13,3 @@
 ## GitHub Pages 배포 방법
 
 이 프로젝트는 `/docs` 폴더를 GitHub Pages 루트로 사용합니다.
-
-### Pages 설정 방법
-
-1. GitHub 저장소의 **Settings** 이동
-2. **Pages** 이동
-3. **Source**: `Deploy from a branch`
-4. **Branch**: `main`
-5. **Folder**: `/docs`
-
-배포 URL 예시:
-
-- `https://nalbam.github.io/freedom-timeline/`

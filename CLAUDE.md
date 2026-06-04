@@ -35,6 +35,7 @@ Freedom Timeline은 경제적 자유(FIRE) 달성 시점을 가정·시뮬레이
 - 매년 `netWorth = netWorth * (1 + returnRate) + income - expense`, 지출은 `inflationRate`로 증가.
 - FI 목표 자산 = `expense / withdrawalRate`. 순자산이 이를 처음 넘는 나이가 `fiAge`.
 - `overrides`로 일부 파라미터만 바꿔 재계산 가능 — 시나리오 비교(`renderScenarioCards`)가 이를 이용해 보수적/낙관적 케이스를 만든다.
+- **표시 모드** (`displayMode`, `freedom-timeline-mode` 키): 명목 계산을 끝낸 뒤 `"real"`(오늘 가치, 기본)이면 결과 rows를 `(1 + inflationRate)^경과연수`로 나눠 현재 화폐가치로 환산한다. `"nominal"`(미래 가치)은 환산하지 않는다. 디플레이트는 표시값에만 적용되며 `fiAge`는 명목 비교로 구해 모드와 무관하다. 결과 패널의 `.mode-toggle` 버튼으로 전환한다.
 
 ### 선언적 입력 필드: `FIELD_CONFIGS`
 
