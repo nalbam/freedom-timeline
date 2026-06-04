@@ -266,12 +266,14 @@ function simulate(finance, rateForYear) {
     const totalExpense = expense + eduCost;
     if (age > currentAge) {
       const returnRate = rateForYear(age - currentAge);
-      const gain = netWorth * returnRate;
+      const gain = netWorth > 0 ? netWorth * returnRate : 0;
       const tax = Math.max(0, gain) * investmentTaxRate;
       netWorth = netWorth + gain - tax + income - totalExpense;
       netWorth += sumEventsAt(state.events, age, currentAge, inflationRate);
     }
-    const goalAsset = expense / withdrawalRate;
+    const retirementExpenseAtAge =
+      finance.annualExpense * retirementExpenseRatio * Math.pow(1 + inflationRate, age - currentAge);
+    const goalAsset = retirementExpenseAtAge / withdrawalRate;
     if (fiAge === null && netWorth >= goalAsset) fiAge = age;
     if (depletionAge === null && netWorth < 0) depletionAge = age;
     rows.push({ age, netWorth, income, expense: totalExpense, goalAsset });
@@ -314,7 +316,7 @@ function calculateProjection() {
     rows: displayRows,
     retirementNetWorth: retirementRow.netWorth,
     finalNetWorth: finalRow.netWorth,
-    currentFiTarget: finance.annualExpense / withdrawalRate,
+    currentFiTarget: (finance.annualExpense * (finance.retirementExpenseRatio / 100)) / withdrawalRate,
     annualSurplus: finance.annualIncome - finance.annualExpense,
   };
 }
@@ -476,7 +478,7 @@ function renderCharts(base) {
 
   const labels = base.rows.map((row) => `${row.age}세`);
   const netWorthData = base.rows.map((row) => row.netWorth);
-  const goalData = base.rows.map(() => base.currentFiTarget);
+  const goalData = base.rows.map((row) => row.goalAsset);
   const incomeData = base.rows.map((row) => row.income);
   const expenseData = base.rows.map((row) => row.expense);
 
@@ -560,11 +562,17 @@ function renderCharts(base) {
   });
 }
 
+let mcTimer;
+function scheduleMonteCarlo() {
+  clearTimeout(mcTimer);
+  mcTimer = setTimeout(renderMonteCarlo, 150);
+}
+
 function rerenderResults() {
   saveState();
   const base = calculateProjection();
   renderCards(base);
-  renderMonteCarlo();
+  scheduleMonteCarlo();
   renderCharts(base);
 }
 
