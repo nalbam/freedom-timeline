@@ -25,7 +25,7 @@ Freedom Timeline은 경제적 자유(FIRE) 달성 시점을 가정·시뮬레이
 2. **이벤트 → state 변경** — 모든 input/click은 `document.body`에 위임된 단일 핸들러가 `data-*` 속성(`data-key`, `data-index`, `data-type`, `data-action`)으로 식별해 처리한다. 개별 요소에 리스너를 붙이지 않는다.
 3. **재렌더 — 두 진입점**:
    - `recalculateAndRender()` — 가족·이벤트 추가/삭제·이름·생일 변경, 초기 로드, 리셋 시. 가족·재무·이벤트 필드를 포함한 전체 UI를 다시 그린다.
-   - `rerenderResults()` — 재무 슬라이더/숫자/체크박스 입력 변경 시. 저장 + 결과카드·시나리오·몬테카를로·차트만 갱신한다. 입력 필드를 재생성하지 않아 슬라이더 드래그가 끊기지 않으며, 짝꿍 input과 `.field-hint`는 핸들러가 직접 갱신한다.
+   - `rerenderResults()` — 재무 슬라이더/숫자/체크박스 입력 변경 시. 저장 + 결과카드·차트는 즉시 갱신하고, 몬테카를로(`renderMonteCarlo`)는 `scheduleMonteCarlo()`로 150ms debounce해 드래그 중 과도한 재계산을 막는다. 입력 필드를 재생성하지 않아 슬라이더 드래그가 끊기지 않으며, 짝꿍 input과 `.field-hint`는 핸들러가 직접 갱신한다.
 
 ### 핵심 계산: `simulate` / `calculateProjection`
 
@@ -33,7 +33,7 @@ Freedom Timeline은 경제적 자유(FIRE) 달성 시점을 가정·시뮬레이
 
 - 은퇴 전: 소득에 `incomeGrowthRate`. 은퇴 후: 소득 0, `pensionStartAge` 이후 연금(`pensionInflationLinked`면 인플레 연동, 아니면 명목 고정). 은퇴 직후 생활비는 `retirementExpenseRatio`로 1회 조정.
 - 생활비는 `inflationRate`로 증가. **자녀 교육비**(`eduCostAt`)는 family 구성원 나이가 `eduStartAge~eduEndAge`인 인원수 × `eduCostPerYear`로 매년 가산되며 생활비와 분리된다(FI 목표 자산엔 미포함). **일회성 이벤트**(`sumEventsAt`, `state.events`)는 해당 나이에 순자산을 가감한다. 교육비·이벤트 입력은 오늘 가치로 보고 명목 환산한다.
-- 매년 양(+)의 투자수익에 `investmentTaxRate`, 연금 수령액에 `pensionTaxRate`로 과세한다(근로소득 `annualIncome`은 실수령=세후 가정). `netWorth = netWorth + 세후수익 + 소득 − 총지출`. FI 목표 자산 = `생활비/withdrawalRate`, 순자산이 처음 넘는 나이가 `fiAge`. 순자산이 처음 음수가 되는 나이가 `depletionAge`(자산 고갈).
+- 매년 양(+)의 투자수익에 `investmentTaxRate`, 연금 수령액에 `pensionTaxRate`로 과세한다(근로소득 `annualIncome`은 실수령=세후 가정). 투자수익은 순자산이 양(+)일 때만 발생한다(음수 자산엔 미적용 — 고갈 후 빚의 복리 가속 방지). `netWorth = netWorth + 세후수익 + 소득 − 총지출`. FI 목표 자산 = `은퇴 후 지출(annualExpense × retirementExpenseRatio, 매년 인플레 환산) / withdrawalRate` — 은퇴 전후 동일 공식이라 오늘 가치 모드에선 상수가 된다. 순자산이 처음 넘는 나이가 `fiAge`. 순자산이 처음 음수가 되는 나이가 `depletionAge`(자산 고갈).
 - **표시 모드** (`displayMode`, `freedom-timeline-mode` 키): 명목 계산을 끝낸 뒤 `"real"`(오늘 가치, 기본)이면 결과 rows를 `(1 + inflationRate)^경과연수`로 나눠 현재 화폐가치로 환산한다. `"nominal"`(미래 가치)은 환산하지 않는다. 디플레이트는 표시값에만 적용되며 `fiAge`·`depletionAge`는 명목 비교로 구해 모드와 무관하다. 결과 패널의 `.mode-toggle` 버튼으로 전환한다.
 - **몬테카를로**(`runMonteCarlo`): 매년 수익률을 `N(returnRate, returnVolatility)`에서 샘플(`randNormal`, Box-Muller)해 `MC_ITERATIONS`회 `simulate` 실행 → 성공확률(고갈 없이 기대수명 도달 비율) + 최종 순자산 P10/P50/P90 + FI 달성 나이 P10/P50/P90·달성률. 불확실성 표현을 전담한다(별도 시나리오 비교 패널은 없음).
 

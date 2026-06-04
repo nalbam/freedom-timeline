@@ -22,7 +22,7 @@ const DEFAULT_STATE = {
     withdrawalRate: 4,
     pensionStartAge: 65,
     annualPensionAmount: 20000000,
-    retirementExpenseRatio: 100,
+    retirementExpenseRatio: 80,
     pensionInflationLinked: true,
     eduCostPerYear: 15000000,
     eduStartAge: 7,
