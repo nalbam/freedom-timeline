@@ -9,8 +9,7 @@
 
 1. 저장소를 클론합니다.
 2. 브라우저에서 `/docs/index.html` 파일을 직접 엽니다.
-3. 입력값은 브라우저 `localStorage`에 자동 저장/복원됩니다(`freedom-timeline-state` = 가족·재무 입력, `freedom-timeline-theme` = 테마, `freedom-timeline-mode` = 표시 모드).
-
+3. 입력값은 브라우저 `localStorage`에 자동 저장/복원됩니다.
 ## GitHub Pages 배포 방법
 
 이 프로젝트는 `/docs` 폴더를 GitHub Pages 루트로 사용합니다.
