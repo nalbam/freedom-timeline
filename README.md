@@ -1,6 +1,6 @@
 # freedom-timeline
 
-경제적 자유(파이어) 달성 시점을 가정해보는 정적 웹앱입니다.  
+경제적 자유(파이어) 달성 시점을 가정해보는 정적 웹앱입니다.
 가족 구성원의 생년월일, 자산/소득/지출/수익률/인플레이션 등을 입력하면 즉시 계산되어
 결과 카드와 그래프로 확인할 수 있습니다.
 
@@ -24,4 +24,4 @@
 
 배포 URL 예시:
 
-- `https://{github-username}.github.io/freedom-timeline/`
+- `https://nalbam.github.io/freedom-timeline/`
