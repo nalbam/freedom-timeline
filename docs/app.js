@@ -3,14 +3,14 @@ const THEME_KEY = "freedom-timeline-theme";
 
 const DEFAULT_STATE = {
   family: [
-    { name: "나", birthDate: "1985-01-01" },
-    { name: "배우자", birthDate: "1986-01-01" },
-    { name: "자녀1", birthDate: "2015-01-01" },
-    { name: "자녀2", birthDate: "2018-01-01" },
+    { name: "나", birthDate: "1980-01-01" },
+    { name: "배우자", birthDate: "1980-01-01" },
+    { name: "자녀1", birthDate: "2010-01-01" },
+    { name: "자녀2", birthDate: "2012-01-01" },
   ],
   finance: {
     currentNetWorth: 500000000,
-    annualIncome: 120000000,
+    annualIncome: 80000000,
     annualExpense: 60000000,
     returnRate: 5,
     inflationRate: 3,
@@ -106,14 +106,12 @@ function renderFamily() {
           이름
           <input type="text" data-type="name" data-index="${index}" value="${member.name}" />
         </label>
-        <button type="button" data-action="delete" data-index="${index}">삭제</button>
-      </div>
-      <div class="row">
         <label style="flex:1">
           생년월일
           <input type="date" data-type="birthDate" data-index="${index}" value="${member.birthDate}" />
         </label>
         <div>만 나이: <strong>${age}세</strong></div>
+        <button type="button" data-action="delete" data-index="${index}">삭제</button>
       </div>
     `;
     list.appendChild(wrapper);
