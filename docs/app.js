@@ -10,8 +10,8 @@ const DEFAULT_STATE = {
   ],
   finance: {
     currentNetWorth: 500000000,
-    annualIncome: 80000000,
-    annualExpense: 50000000,
+    annualIncome: 120000000,
+    annualExpense: 60000000,
     returnRate: 5,
     inflationRate: 3,
     incomeGrowthRate: 3,
