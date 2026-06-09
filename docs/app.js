@@ -13,7 +13,7 @@ const DEFAULT_STATE = {
   finance: {
     currentNetWorth: 470000000,
     annualIncome: 60000000,
-    annualExpense: 43000000,
+    annualExpense: 50000000,
     returnRate: 5,
     inflationRate: 2.5,
     incomeGrowthRate: 3,
@@ -36,8 +36,8 @@ const DEFAULT_STATE = {
 
 const FIELD_CONFIGS = [
   { key: "currentNetWorth", label: "현재 순자산(원)", min: 0, max: 3000000000, step: 1000000, unit: "money" },
-  { key: "annualIncome", label: "연간 소득(원, 실수령)", min: 0, max: 1000000000, step: 1000000, unit: "money" },
-  { key: "annualExpense", label: "연간 지출(원)", min: 0, max: 1000000000, step: 1000000, unit: "money" },
+  { key: "annualIncome", label: "연간 소득(원, 실수령)", min: 0, max: 500000000, step: 1000000, unit: "money" },
+  { key: "annualExpense", label: "연간 지출(원)", min: 0, max: 500000000, step: 1000000, unit: "money" },
   { key: "returnRate", label: "투자 기대 수익률(%)", min: 0, max: 20, step: 0.1, unit: "percent" },
   { key: "inflationRate", label: "인플레이션(%)", min: 0, max: 20, step: 0.1, unit: "percent" },
   { key: "incomeGrowthRate", label: "소득 증가율(%)", min: 0, max: 20, step: 0.1, unit: "percent" },
