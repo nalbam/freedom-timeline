@@ -44,7 +44,12 @@
           <section class="panel">
             <div class="panel-title-row">
               <h2>재무 입력</h2>
-              <button id="reset-btn" type="button" class="danger">초기화</button>
+              <div class="preset-row">
+                <button id="reset-btn" type="button" class="danger">초기화</button>
+                <button type="button" data-preset="top50">상위 50%</button>
+                <button type="button" data-preset="top30">상위 30%</button>
+                <button type="button" data-preset="top10">상위 10%</button>
+              </div>
             </div>
             <div id="finance-fields" class="field-grid"></div>
             <label class="check-row">

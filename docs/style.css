@@ -125,6 +125,17 @@ p {
   margin-bottom: 12px;
 }
 
+.preset-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.preset-row button {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
 button {
   border: 0;
   border-radius: var(--radius-sm);
@@ -133,11 +144,16 @@ button {
   cursor: pointer;
   background: var(--primary);
   color: var(--on-primary);
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.1s ease;
 }
 
 button:hover {
   filter: brightness(1.05);
+}
+
+button:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
 }
 
 button.danger {

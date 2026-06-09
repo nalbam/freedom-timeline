@@ -11,22 +11,22 @@ const DEFAULT_STATE = {
     { name: "자녀2", birthDate: "2012-01-01" },
   ],
   finance: {
-    currentNetWorth: 500000000,
-    annualIncome: 120000000,
-    annualExpense: 80000000,
+    currentNetWorth: 450000000,
+    annualIncome: 60000000,
+    annualExpense: 35000000,
     returnRate: 5,
-    inflationRate: 3,
+    inflationRate: 2.5,
     incomeGrowthRate: 3,
-    retirementAge: 55,
-    lifeExpectancy: 100,
+    retirementAge: 63,
+    lifeExpectancy: 90,
     withdrawalRate: 4,
     pensionStartAge: 65,
-    annualPensionAmount: 20000000,
+    annualPensionAmount: 14000000,
     retirementExpenseRatio: 80,
     pensionInflationLinked: true,
-    eduCostPerYear: 15000000,
+    eduCostPerYear: 6000000,
     eduStartAge: 7,
-    eduEndAge: 22,
+    eduEndAge: 18,
     returnVolatility: 15,
     investmentTaxRate: 15.4,
     pensionTaxRate: 5,
@@ -54,6 +54,12 @@ const FIELD_CONFIGS = [
   { key: "investmentTaxRate", label: "투자수익 세율(%)", min: 0, max: 30, step: 0.1, unit: "percent" },
   { key: "pensionTaxRate", label: "연금소득 세율(%)", min: 0, max: 30, step: 0.1, unit: "percent" },
 ];
+
+const PRESETS = {
+  top50: { currentNetWorth: 800000000, annualIncome: 80000000, annualExpense: 42000000 },
+  top30: { currentNetWorth: 1200000000, annualIncome: 100000000, annualExpense: 48000000 },
+  top10: { currentNetWorth: 2170000000, annualIncome: 150000000, annualExpense: 60000000 },
+};
 
 const state = loadState();
 let displayMode = localStorage.getItem(MODE_KEY) === "nominal" ? "nominal" : "real";
@@ -681,6 +687,15 @@ function attachEvents() {
       localStorage.setItem(MODE_KEY, displayMode);
       syncModeButtons();
       rerenderResults();
+      return;
+    }
+
+    if (target.dataset.preset) {
+      const preset = PRESETS[target.dataset.preset];
+      if (preset) {
+        state.finance = { ...state.finance, ...preset };
+        recalculateAndRender();
+      }
       return;
     }
 
