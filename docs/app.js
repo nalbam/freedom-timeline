@@ -57,7 +57,7 @@ const FIELD_CONFIGS = [
 
 const PRESETS = {
   top50: { currentNetWorth: 500000000, annualIncome: 70000000, annualExpense: 60000000, annualPensionAmount: 18000000 },
-  top30: { currentNetWorth: 700000000, annualIncome: 100000000, annualExpense: 80000000, annualPensionAmount: 24000000 },
+  top30: { currentNetWorth: 700000000, annualIncome: 100000000, annualExpense: 75000000, annualPensionAmount: 24000000 },
   top10: { currentNetWorth: 1100000000, annualIncome: 160000000, annualExpense: 100000000, annualPensionAmount: 36000000 },
 };
 
