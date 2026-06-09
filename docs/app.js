@@ -11,9 +11,9 @@ const DEFAULT_STATE = {
     { name: "자녀2", birthDate: "2012-01-01" },
   ],
   finance: {
-    currentNetWorth: 450000000,
+    currentNetWorth: 470000000,
     annualIncome: 60000000,
-    annualExpense: 35000000,
+    annualExpense: 43000000,
     returnRate: 5,
     inflationRate: 2.5,
     incomeGrowthRate: 3,
@@ -21,7 +21,7 @@ const DEFAULT_STATE = {
     lifeExpectancy: 90,
     withdrawalRate: 4,
     pensionStartAge: 65,
-    annualPensionAmount: 14000000,
+    annualPensionAmount: 16000000,
     retirementExpenseRatio: 80,
     pensionInflationLinked: true,
     eduCostPerYear: 6000000,
@@ -56,9 +56,9 @@ const FIELD_CONFIGS = [
 ];
 
 const PRESETS = {
-  top50: { currentNetWorth: 800000000, annualIncome: 80000000, annualExpense: 42000000 },
-  top30: { currentNetWorth: 1200000000, annualIncome: 100000000, annualExpense: 48000000 },
-  top10: { currentNetWorth: 2170000000, annualIncome: 150000000, annualExpense: 60000000 },
+  top50: { currentNetWorth: 500000000, annualIncome: 70000000, annualExpense: 60000000, annualPensionAmount: 18000000 },
+  top30: { currentNetWorth: 700000000, annualIncome: 100000000, annualExpense: 80000000, annualPensionAmount: 24000000 },
+  top10: { currentNetWorth: 1100000000, annualIncome: 160000000, annualExpense: 100000000, annualPensionAmount: 36000000 },
 };
 
 const state = loadState();
